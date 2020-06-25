@@ -945,3 +945,7 @@ input#command-input {
 .black-slot-button i {
     margin-left: 2px;
 }
+
+.dark-theme a, .dark-theme .text-color {
+    color: #cccaca;
+}
