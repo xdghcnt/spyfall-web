@@ -22,7 +22,7 @@ class Location extends React.Component {
             style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(/spyfall/location/${index}.jpg)`}}
             className={cs(`location location-${index}`, {
                 stroked: table && data.strokedLocations && data.strokedLocations[index],
-                correct: data.phase === 3 && data.spy === data.userId && index === data.correctLocation
+                correct: table && (index === data.correctLocation || index === data.blackSlotLocation)
             })}>
             <div className="location-title">{window.hyphenate(index !== "spy" ? data.locations[index] : "Шпион")}</div>
             {(index !== "spy" && !table)
@@ -61,7 +61,6 @@ class Player extends React.Component {
             <div
                 onClick={() => game.handleClickStrokePlayer(id)}
                 className={cs("player", {
-                    ready: data.readyPlayers.includes(id),
                     offline: !data.onlinePlayers.includes(id),
                     self: id === data.userId,
                     "has-avatar": hasAvatar,
@@ -69,11 +68,11 @@ class Player extends React.Component {
                     playerStartedVoting: data.playerStartedVoting === id,
                     voted: data.playersVoted.includes(id),
                     stroked: data.suspectedPlayer !== id && (data.strokedPlayers && data.strokedPlayers[id]),
-                    correctSpy: data.userId !== data.correctSpy && data.correctSpy === id
+                    correctSpy: data.correctSpy === id || data.blackSlotSpy === id
                 })} onTouchStart={(e) => e.target.focus()}
                 style={!isSpectator ? {
                     "background-image": hasAvatar
-                        ? `url(${avatarURI})`
+                        ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${avatarURI})`
                         : `none`,
                     "background-color": hasAvatar
                         ? `transparent`
@@ -105,6 +104,10 @@ class Player extends React.Component {
                         <span className="black-slot-button">{blackSlotButton}</span>
                     ) : ""}
                     <div className="player-host-controls">
+                        {((data.spectators.includes(id)
+                            && !data.blackSlotPlayers.includes(id) && data.userId === data.hostId)) ? (
+                            <span className="black-slot-button">{blackSlotButton}</span>
+                        ) : ""}
                         {(data.hostId === data.userId && data.userId !== id) ? (
                             <i className="material-icons host-button"
                                title="Give host"
@@ -117,10 +120,6 @@ class Player extends React.Component {
                                onClick={(evt) => this.props.handleRemovePlayer(id, evt)}>
                                 delete_forever
                             </i>) : ""}
-                        {((data.spectators.includes(id)
-                            && !data.blackSlotPlayers.includes(id) && data.userId === data.hostId)) ? (
-                            <span className="black-slot-button">{blackSlotButton}</span>
-                        ) : ""}
                         {(data.hostId === id) ? (
                             <i className="material-icons host-button inactive"
                                title="Game host">
@@ -301,6 +300,11 @@ class Game extends React.Component {
         this.socket.emit("stroke-player", player);
     }
 
+    handleGiveBlackSlot(player, evt) {
+        evt.stopPropagation();
+        this.socket.emit("toggle-black-slot", player);
+    }
+
     handleRemovePlayer(id, evt) {
         evt.stopPropagation();
         popup.confirm({content: `Removing ${this.state.playerNames[id]}?`}, (evt) => evt.proceed && this.socket.emit("remove-player", id));
@@ -475,7 +479,9 @@ class Game extends React.Component {
             else if (data.playerWin)
                 status = `Победа ${data.playerNames[data.playerWin]}!`;
             else if (data.phase === 3)
-                if (data.spyFound)
+                if (data.locationFound === false)
+                    status = `Шпион назвал неправильную локацию...`;
+                else if (data.spyFound)
                     status = `Шпион пойман!`;
                 else if (data.locationFound)
                     status = `Шпион нашёл локацию!`;
@@ -550,6 +556,7 @@ class Game extends React.Component {
                         </div>
                         <div className={cs("vote-dialog panel", {
                             active: data.phase === 2
+                                && data.players.includes(data.userId)
                                 && !data.playersVoted.includes(data.userId)
                                 && data.suspectedPlayer !== data.userId
                         })}>
@@ -567,7 +574,7 @@ class Game extends React.Component {
                             <div
                                 onClick={(evt) => this.handleJoinSpectatorsClick(evt)}
                                 className="spectators panel">
-                                Spectators:
+                                Наблюдают:
                                 {
                                     data.spectators.length ? data.spectators.map(
                                         (player) => (<Player data={data} id={player} isSpectator={true}

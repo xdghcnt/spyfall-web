@@ -27,7 +27,6 @@ function init(wsServer, path) {
                     playerColors: {},
                     onlinePlayers: new JSONSet(),
                     players: new JSONSet(),
-                    readyPlayers: new JSONSet(),
                     playersVoted: new JSONSet(),
                     playersUsedVoteToken: new JSONSet(),
                     playerScores: {},
@@ -75,7 +74,15 @@ function init(wsServer, path) {
                                 strokedPlayers: state.strokedPlayers[player] || {},
                                 spy: isSpy ? state.spy : null,
                                 location: !isSpy ? state.location : null,
-                                role: !isSpy ? state.roles[player] : null
+                                role: !isSpy ? state.roles[player] : null,
+                                blackSlotLocation: null,
+                                blackSlotSpy: null
+                            });
+                        } else if (room.spectators.has(player)) {
+                            const isBlackSlot = room.blackSlotPlayers.has(player);
+                            send(player, "player-state", {
+                                blackSlotLocation: isBlackSlot ? state.location : null,
+                                blackSlotSpy: isBlackSlot ? state.spy : null
                             });
                         }
                     });
@@ -158,7 +165,6 @@ function init(wsServer, path) {
                     updatePlayerState();
                 },
                 stopGame = () => {
-                    room.readyPlayers.clear();
                     room.paused = true;
                     room.teamsLocked = false;
                     room.phase = 0;
@@ -167,7 +173,6 @@ function init(wsServer, path) {
                     updatePlayerState();
                 },
                 startRound = () => {
-                    room.readyPlayers.clear();
                     if (room.players.size >= PLAYERS_MIN) {
                         room.suspectedPlayer = null;
                         room.playerStartedVoting = null;
@@ -222,7 +227,6 @@ function init(wsServer, path) {
                 },
                 removePlayer = (playerId) => {
                     room.players.delete(playerId);
-                    room.readyPlayers.delete(playerId);
                     if (room.spectators.has(playerId) || !room.onlinePlayers.has(playerId)) {
                         room.spectators.delete(playerId);
                         delete room.playerNames[playerId];
@@ -322,6 +326,7 @@ function init(wsServer, path) {
                 },
                 "add-vote": (user) => {
                     if (!room.playersVoted.has(user)
+                        && room.phase === 2
                         && room.players.has(user)) {
                         room.playersVoted.add(user);
                         if (room.playersVoted.size === room.players.size - 1)
@@ -415,6 +420,7 @@ function init(wsServer, path) {
                 },
                 "players-join": (user) => {
                     if (!room.teamsLocked) {
+                        room.blackSlotPlayers.delete(user);
                         room.spectators.delete(user);
                         room.players.add(user);
                         update();
@@ -426,6 +432,16 @@ function init(wsServer, path) {
                         room.players.delete(user);
                         room.spectators.add(user);
                         leaveTeam(user);
+                        update();
+                        updatePlayerState();
+                    }
+                },
+                "toggle-black-slot": (user, playerId) => {
+                    if (room.spectators.has(playerId) && user === room.hostId) {
+                        if (!room.blackSlotPlayers.has(playerId))
+                            room.blackSlotPlayers.add(playerId);
+                        else
+                            room.blackSlotPlayers.delete(playerId);
                         update();
                         updatePlayerState();
                     }
@@ -457,12 +473,12 @@ function init(wsServer, path) {
             Object.assign(this.room, snapshot.room);
             Object.assign(this.state, snapshot.state);
             this.room.paused = true;
-            this.room.inactivePlayers = new JSONSet(this.room.inactivePlayers);
             this.room.onlinePlayers = new JSONSet();
             this.room.spectators = new JSONSet();
             this.room.players = new JSONSet(this.room.players);
-            this.room.readyPlayers = new JSONSet(this.room.readyPlayers);
-            this.room.playerHints = new JSONSet(this.room.playerHints);
+            this.room.playersVoted = new JSONSet(this.room.playersVoted);
+            this.room.playersUsedVoteToken = new JSONSet(this.room.playersUsedVoteToken);
+            this.room.blackSlotPlayers = new JSONSet(this.room.blackSlotPlayers);
             this.room.onlinePlayers.clear();
         }
     }

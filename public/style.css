@@ -42,19 +42,21 @@ body.dark-theme {
 }
 
 .player-host-controls {
-    margin-left: 5px;
     display: none;
+}
+
+.player-list .player-host-controls {
     position: absolute;
     bottom: 0;
     right: -1px;
     opacity: 0.7;
 }
 
-.player-host-controls i {
+.player-list .player-host-controls i {
     font-size: 11px !important;
 }
 
-.player-name-section:hover .player-host-controls, .player-name-section:focus .player-host-controls {
+.player:hover .player-host-controls, .player:focus .player-host-controls {
     display: inline-block;
 }
 
@@ -366,6 +368,7 @@ body {
     color: white;
     position: relative;
     cursor: pointer;
+    box-shadow: inset 0 0 5px 1px #191919bf;
 }
 
 .avatar {
@@ -725,7 +728,6 @@ input#command-input {
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
-    height: 20px;
     box-shadow: 0 0 4px 1px black;
 }
 
@@ -745,7 +747,13 @@ input#command-input {
 .main-dock {
     display: flex;
     justify-content: center;
-    margin-bottom: 9px;
+    margin-top: 42px;
+    margin-bottom: 23px;
+    background: #a1ad99;
+}
+
+.dark-theme .main-dock {
+    background: #121212;
 }
 
 .player-list .player-name {
@@ -774,7 +782,7 @@ input#command-input {
     box-shadow: 0 0 3px black;
 }
 
-.player-name-section {
+.player-list .player-name-section {
     display: flex;
     justify-content: space-between;
 }
@@ -853,7 +861,7 @@ input#command-input {
     top: 140px;
     font-size: 33px;
     padding: 15px;
-    box-shadow: 0 0 11px white !important;
+    box-shadow: 0 0 30px 10px white !important;
     user-select: none;
     text-align: center;
     right: -100%;
@@ -884,9 +892,8 @@ input#command-input {
     display: flex;
     justify-content: center;
     width: 100%;
-    background: #00000091;
+    background: linear-gradient(0deg, rgb(0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 5%, rgba(0, 0, 0, 0.12) 52%, rgba(0, 0, 0, 0) 100%);
     padding-top: 6px;
-    box-shadow: 0 0 20px 0 black;
 }
 
 .votePhase .timer-time, .revealPhase .timer-time {
@@ -920,15 +927,21 @@ input#command-input {
 }
 
 .location.correct {
-    box-shadow: 0 0 10px 6px white;
+    box-shadow: 0 0 10px 4px white;
 }
 
 .correctSpy {
-    box-shadow: inset 0 0 3px 4px white !important;
+    box-shadow: inset 0 0 9px 4px #ffffffbd !important;
 }
 
-@media (max-width: 900px) {
-    .player-list {
-        padding-top: 42px;
-    }
+.player-host-controls i {
+    margin-left: 2px;
+}
+
+.black-slot-button i {
+    margin-left: 2px;
+}
+
+.black-slot-button i {
+    margin-left: 2px;
 }
