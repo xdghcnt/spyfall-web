@@ -949,3 +949,7 @@ input#command-input {
 .dark-theme a, .dark-theme .text-color {
     color: #cccaca;
 }
+
+.location.wrong {
+    box-shadow: 0 0 10px 4px #a7402e;
+}

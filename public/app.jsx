@@ -22,7 +22,8 @@ class Location extends React.Component {
             style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(/spyfall/location/${index}.jpg)`}}
             className={cs(`location location-${index}`, {
                 stroked: table && data.strokedLocations && data.strokedLocations[index],
-                correct: table && (index === data.correctLocation || index === data.blackSlotLocation)
+                correct: table && (index === data.correctLocation || index === data.blackSlotLocation),
+                wrong: table && index === data.wrongLocation
             })}>
             <div className="location-title">{window.hyphenate(index !== "spy" ? data.locations[index] : "Шпион")}</div>
             {(index !== "spy" && !table)
@@ -486,7 +487,7 @@ class Game extends React.Component {
                 else if (data.locationFound)
                     status = `Шпион нашёл локацию!`;
                 else
-                    status = `Шпиону удалось уйти...`;
+                    status = `Вы поймали: ${data.wrongSpyRole.toLowerCase()}. Шпиону удалось уйти...`;
             return (
                 <div className={cs("game", {timed: this.state.timed})}>
                     <div className={

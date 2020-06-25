@@ -46,6 +46,7 @@ function init(wsServer, path) {
                     playerStartedVoting: null,
                     spyFound: null,
                     locationFound: null,
+                    wrongLocation: null,
                     locations: Object.keys(locations),
                     blackSlotPlayers: new JSONSet(),
                     correctLocation: null,
@@ -178,6 +179,7 @@ function init(wsServer, path) {
                         room.playerStartedVoting = null;
                         room.spyFound = null;
                         room.locationFound = null;
+                        room.wrongLocation = null;
                         room.correctLocation = null;
                         room.correctSpy = null;
                         room.playersUsedVoteToken.clear();
@@ -210,6 +212,8 @@ function init(wsServer, path) {
                 endVoting = () => {
                     if (room.playersVoted.size === room.players.size - 1) {
                         room.spyFound = room.suspectedPlayer === state.spy;
+                        if (!room.spyFound)
+                            room.wrongSpyRole = state.roles[room.suspectedPlayer];
                         endRound();
                     } else if (room.playersUsedVoteToken.size === room.players.size - (room.playersUsedVoteToken.has(state.spy) ? 0 : 1)) {
                         room.spyFound = false;
@@ -337,8 +341,10 @@ function init(wsServer, path) {
                 "guess-location": (user, location) => {
                     if (room.players.has(user) && room.phase === 1 && state.spy === user) {
                         room.locationFound = location === state.location;
-                        if (!room.locationFound)
+                        if (!room.locationFound) {
+                            room.wrongLocation = location;
                             room.spyFound = true;
+                        }
                         endRound();
                     }
                     update();
