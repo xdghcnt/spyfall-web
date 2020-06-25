@@ -193,7 +193,7 @@ function init(wsServer, path) {
                         [...room.players].forEach((player) => {
                             state.roles[player] = roles[rolesUsed++];
                             if (rolesUsed === roles.length) {
-                                roles = shuffleArray(locations[state.location]);
+                                roles = shuffleArray(locations[location]);
                                 rolesUsed = 0;
                             }
                         });
