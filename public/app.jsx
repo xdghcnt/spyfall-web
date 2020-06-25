@@ -93,9 +93,9 @@ class Player extends React.Component {
                                 className={cs("claim-spy", {"active": hasToken})}>
                                 <i title={data.suspectedPlayer === id
                                     ? "Обвиняется"
-                                    : data.phase === 1 && id !== data.userId && !data.playersUsedVoteToken.includes(data.userId)
+                                    : !data.playersUsedVoteToken.includes(data.userId)
                                         ? "Обвинить"
-                                        : ""}
+                                        : "Вы уже истратили своё обвинение"}
                                    className="material-icons host-button">api</i>
                             </span>
                             <span className="score">{data.playerScores[id] || 0}</span>
@@ -609,7 +609,7 @@ class Game extends React.Component {
                                                                               onChange={evt => !isNaN(evt.target.valueAsNumber)
                                                                                   && this.handleChangeParam(evt.target.valueAsNumber, "revealTime")}
                                             />) : (<span className="value">{this.state.revealTime}</span>)}
-                                            <div className="set-goal"><i title="goal"
+                                            <div className="set-goal"><i title="Цель"
                                                                          className="material-icons">flag</i>
                                                 {(isHost && !inProcess) ? (<input id="goal"
                                                                                   type="number"

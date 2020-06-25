@@ -926,3 +926,9 @@ input#command-input {
 .correctSpy {
     box-shadow: inset 0 0 3px 4px white !important;
 }
+
+@media (max-width: 900px) {
+    .player-list {
+        padding-top: 42px;
+    }
+}
