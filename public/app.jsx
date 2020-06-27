@@ -162,13 +162,13 @@ class Avatar extends React.Component {
 class Game extends React.Component {
     componentDidMount() {
         const initArgs = {};
-        if (!parseInt(localStorage.darkThemeDixit))
+        if (!parseInt(localStorage.darkThemeSpyfall))
             document.body.classList.add("dark-theme");
-        if (!localStorage.dixitUserId || !localStorage.dixitUserToken) {
+        if (!localStorage.spyfallUserId || !localStorage.spyfallUserToken) {
             while (!localStorage.userName)
                 localStorage.userName = prompt("Your name");
-            localStorage.dixitUserId = makeId();
-            localStorage.dixitUserToken = makeId();
+            localStorage.spyfallUserId = makeId();
+            localStorage.spyfallUserToken = makeId();
         }
         if (!location.hash)
             history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
@@ -180,8 +180,8 @@ class Game extends React.Component {
         }
         initArgs.avatarId = localStorage.avatarId;
         initArgs.roomId = location.hash.substr(1);
-        initArgs.userId = this.userId = localStorage.dixitUserId;
-        initArgs.token = this.userToken = localStorage.dixitUserToken;
+        initArgs.userId = this.userId = localStorage.spyfallUserId;
+        initArgs.token = this.userToken = localStorage.spyfallUserToken;
         initArgs.userName = localStorage.userName;
         initArgs.wssToken = window.wssToken;
         this.socket = window.socket.of("spyfall");
@@ -369,7 +369,7 @@ class Game extends React.Component {
     }
 
     handleToggleTheme() {
-        localStorage.darkThemeDixit = !parseInt(localStorage.darkThemeDixit) ? 1 : 0;
+        localStorage.darkThemeSpyfall = !parseInt(localStorage.darkThemeSpyfall) ? 1 : 0;
         document.body.classList.toggle("dark-theme");
         this.setState(Object.assign({}, this.state));
     }
@@ -665,7 +665,7 @@ class Game extends React.Component {
                                           className="toggle-theme material-icons settings-button">volume_up</i>)
                                     : (<i onClick={() => this.handleToggleMuteSounds()}
                                           className="toggle-theme material-icons settings-button">volume_off</i>)}
-                                {!parseInt(localStorage.darkThemeDixit)
+                                {!parseInt(localStorage.darkThemeSpyfall)
                                     ? (<i onClick={() => this.handleToggleTheme()}
                                           className="toggle-theme material-icons settings-button">brightness_2</i>)
                                     : (<i onClick={() => this.handleToggleTheme()}
