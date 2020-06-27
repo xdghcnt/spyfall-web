@@ -487,7 +487,7 @@ class Game extends React.Component {
                 else if (data.locationFound)
                     status = `Шпион нашёл локацию!`;
                 else
-                    status = `Вы поймали: ${data.wrongSpyRole.toLowerCase()}. Шпиону удалось уйти...`;
+                    status = `Пойман ${data.wrongSpyRole.toLowerCase()}. Шпиону удалось уйти...`;
             return (
                 <div className={cs("game", {timed: this.state.timed})}>
                     <div className={
