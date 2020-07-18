@@ -16,10 +16,11 @@ class Location extends React.Component {
             data = this.props.data,
             index = this.props.index == null ? "spy" : this.props.index,
             game = this.props.game,
-            table = this.props.table;
+            table = this.props.table,
+            url = `/spyfall/${this.props.index == null ? "spy.jpg" : `/location/${data.pack}/${index}.jpg`}`;
         return <div
             onClick={() => table && game.handleClickStrokeLocation(index)}
-            style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(/spyfall/location/${index}.jpg)`}}
+            style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${url})`}}
             className={cs(`location location-${index}`, {
                 stroked: table && data.strokedLocations && data.strokedLocations[index],
                 correct: table && (index === data.correctLocation || index === data.blackSlotLocation),
@@ -281,6 +282,10 @@ class Game extends React.Component {
     handleJoinSpectatorsClick(evt) {
         evt.stopPropagation();
         this.socket.emit("spectators-join");
+    }
+
+    handleSetPack(pack) {
+        this.socket.emit("set-pack", pack);
     }
 
     handleClickAddVote() {
@@ -550,7 +555,7 @@ class Game extends React.Component {
                             </div>
 
                             <div className="locations">
-                                {Array(27).fill(null).map((n, index) => (
+                                {Array(data.locations.length).fill(null).map((n, index) => (
                                     <Location data={data} index={index} game={this} table={true}/>
                                 ))}
                             </div>
@@ -629,6 +634,18 @@ class Game extends React.Component {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="locations-packs">
+                                    {data.packs.map((it) => (
+                                        <div
+                                            onClick={() => this.handleSetPack(it)}
+                                            className={cs("location-pack-button", {
+                                            "level-selected": data.pack === it,
+                                            "settings-button": [0, 3].includes(data.phase) && this.state.userId === this.state.hostId
+                                        })}>
+                                            {it}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>) : ""}
                             <div className="side-buttons">

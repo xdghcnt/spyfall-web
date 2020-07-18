@@ -13,7 +13,7 @@ function init(wsServer, path) {
         app.use("/spyfall", wsServer.static(`${registry.config.appDir}/public`));
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
-    const locations = JSON.parse(fs.readFileSync(`${__dirname}/locations.json`));
+    const packs = JSON.parse(fs.readFileSync(`${__dirname}/locations.json`));
 
     class GameState extends wsServer.users.RoomState {
         constructor(hostId, hostData, userRegistry) {
@@ -47,10 +47,12 @@ function init(wsServer, path) {
                     spyFound: null,
                     locationFound: null,
                     wrongLocation: null,
-                    locations: Object.keys(locations),
                     blackSlotPlayers: new JSONSet(),
                     correctLocation: null,
-                    correctSpy: null
+                    correctSpy: null,
+                    pack: "spyfall1",
+                    locations: Object.keys(packs["spyfall1"]),
+                    packs: Object.keys(packs)
                 },
                 state = {
                     spy: null,
@@ -185,17 +187,17 @@ function init(wsServer, path) {
                         room.playersUsedVoteToken.clear();
                         room.playersVoted.clear();
                         state.spy = shuffleArray([...room.players])[0];
-                        const location = shuffleArray(Object.keys(locations))[0];
-                        state.location = Object.keys(locations).indexOf(location);
+                        const location = shuffleArray(Object.keys(packs[room.pack]))[0];
+                        state.location = Object.keys(packs[room.pack]).indexOf(location);
                         state.strokedLocations = {};
                         state.strokedPlayers = {};
                         state.roles = {};
-                        let roles = shuffleArray(locations[location]),
+                        let roles = shuffleArray(packs[room.pack][location]),
                             rolesUsed = 0;
                         [...room.players].forEach((player) => {
                             state.roles[player] = roles[rolesUsed++];
                             if (rolesUsed === roles.length) {
-                                roles = shuffleArray(locations[location]);
+                                roles = shuffleArray(packs[room.pack][location]);
                                 rolesUsed = 0;
                             }
                         });
@@ -451,6 +453,15 @@ function init(wsServer, path) {
                         update();
                         updatePlayerState();
                     }
+                },
+                "set-pack": (user, pack) => {
+                    if (user === room.hostId && packs[pack] && [0, 3].includes(room.phase)) {
+                        room.pack = pack;
+                        room.locations = Object.keys(packs[pack]);
+                        room.locationFound = null;
+                        room.wrongLocation = null;
+                    }
+                    update();
                 }
             };
         }

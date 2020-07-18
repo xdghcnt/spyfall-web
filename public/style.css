@@ -182,7 +182,6 @@ body {
 
 .host-controls-menu {
     display: none;
-    margin-bottom: 9px;
 }
 
 .host-controls:hover .host-controls-menu, .host-controls:focus .host-controls-menu {
@@ -952,4 +951,14 @@ input#command-input {
 
 .location.wrong {
     box-shadow: 0 0 10px 4px #a7402e;
+}
+
+.locations-packs {
+    display: flex;
+    justify-content: center;
+}
+
+.location-pack-button {
+    padding: 12px 14px;
+    margin: 3px;
 }
