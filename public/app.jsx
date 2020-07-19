@@ -491,7 +491,7 @@ class Game extends React.Component {
                     status = `Шпион пойман!`;
                 else if (data.locationFound)
                     status = `Шпион нашёл локацию!`;
-                else
+                else if (data.wrongSpyRole)
                     status = `Пойман ${data.wrongSpyRole.toLowerCase()}. Шпиону удалось уйти...`;
             return (
                 <div className={cs("game", {timed: this.state.timed})}>
@@ -640,9 +640,9 @@ class Game extends React.Component {
                                         <div
                                             onClick={() => this.handleSetPack(it)}
                                             className={cs("location-pack-button", {
-                                            "level-selected": data.pack === it,
-                                            "settings-button": [0, 3].includes(data.phase) && this.state.userId === this.state.hostId
-                                        })}>
+                                                "level-selected": data.pack === it,
+                                                "settings-button": [0, 3].includes(data.phase) && this.state.userId === this.state.hostId
+                                            })}>
                                             {it}
                                         </div>
                                     ))}

@@ -458,8 +458,8 @@ function init(wsServer, path) {
                     if (user === room.hostId && packs[pack] && [0, 3].includes(room.phase)) {
                         room.pack = pack;
                         room.locations = Object.keys(packs[pack]);
-                        room.locationFound = null;
-                        room.wrongLocation = null;
+                        if (room.phase === 3)
+                            startRound();
                     }
                     update();
                 }
