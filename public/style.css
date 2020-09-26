@@ -733,6 +733,7 @@ input#command-input {
 .spectators .player {
     display: inline-block;
     margin: 0 4px;
+    vertical-align: text-top;
 }
 
 .spectators .player:hover .player-host-controls, .spectators .player:focus .player-host-controls {

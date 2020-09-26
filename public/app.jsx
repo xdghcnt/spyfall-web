@@ -81,7 +81,9 @@ class Player extends React.Component {
                         : data.playerColors[id]
                 } : {}}>
                 <div className="player-name-section">
-                    <span className="player-name">{data.playerNames[id]}</span>
+                    {this.props.isSpectator ? <UserAudioMarker data={data} user={id}/> : ""}
+                    <span
+                        className={cs("player-name", ...(isSpectator ? [] : UserAudioMarker.getAudioMarkerClasses(data, id)))}>{data.playerNames[id]}</span>
                     {isPlayer
                         ? (<span className="player-controls">
                             <span className="has-badge">
@@ -162,6 +164,7 @@ class Avatar extends React.Component {
 
 class Game extends React.Component {
     componentDidMount() {
+        this.gameName = "spyfall";
         const initArgs = {};
         if (!parseInt(localStorage.darkThemeSpyfall))
             document.body.classList.add("dark-theme");
@@ -180,7 +183,7 @@ class Game extends React.Component {
             delete localStorage.acceptDelete;
         }
         initArgs.avatarId = localStorage.avatarId;
-        initArgs.roomId = location.hash.substr(1);
+        initArgs.roomId = this.roomId = location.hash.substr(1);
         initArgs.userId = this.userId = localStorage.spyfallUserId;
         initArgs.token = this.userToken = localStorage.spyfallUserToken;
         initArgs.userName = localStorage.userName;
