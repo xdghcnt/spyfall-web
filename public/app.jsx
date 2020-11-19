@@ -115,13 +115,13 @@ class Player extends React.Component {
                         {(data.hostId === data.userId && data.userId !== id) ? (
                             <i className="material-icons host-button"
                                title="Give host"
-                               onClick={(evt) => this.props.handleGiveHost(id, evt)}>
+                                onClick={(evt) => game.handleGiveHost(id, evt)}>
                                 vpn_key
                             </i>) : ""}
                         {(data.hostId === data.userId && data.userId !== id) ? (
                             <i className="material-icons host-button"
                                title="Remove"
-                               onClick={(evt) => this.props.handleRemovePlayer(id, evt)}>
+                               onClick={(evt) => game.handleRemovePlayer(id, evt)}>
                                 delete_forever
                             </i>) : ""}
                         {(data.hostId === id) ? (
@@ -542,11 +542,7 @@ class Game extends React.Component {
                                     }, []).map((slice) => (
                                         <div className="player-list-col">{
                                             slice.map((id => (
-                                                    id !== "join" ? (<Player key={id} data={data} id={id}
-                                                                             game={this}
-                                                                             handleGiveHost={(id, evt) => this.handleGiveHost(id, evt)}
-                                                                             handleAvatarClick={() => this.handleClickSetAvatar()}
-                                                                             handleRemovePlayer={(id, evt) => this.handleRemovePlayer(id, evt)}/>)
+                                                    id !== "join" ? (<Player key={id} data={data} id={id} game={this}/>)
                                                         : (<div onClick={(evt) => this.handleJoinPlayersClick(evt)}
                                                                 className="join-button">
                                                             <span className="join-button-text">Войти
@@ -588,8 +584,7 @@ class Game extends React.Component {
                                 Наблюдают:
                                 {
                                     data.spectators.length ? data.spectators.map(
-                                        (player) => (<Player data={data} id={player} isSpectator={true}
-                                                             game={this}/>)
+                                        (player) => (<Player data={data} id={player} isSpectator={true} game={this}/>)
                                     ) : " ..."
                                 }
                             </div>
