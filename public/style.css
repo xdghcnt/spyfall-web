@@ -901,12 +901,13 @@ input#command-input {
 
 .role-card {
     display: flex;
-    align-items: center;
     margin-right: 16px;
+    align-items: stretch;
 }
 
 .role-card .location {
-    height: 100%;
+    height: auto;
+    margin: 0;
 }
 
 .role-title {
