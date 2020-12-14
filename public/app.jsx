@@ -191,7 +191,11 @@ class Game extends React.Component {
         this.socket = window.socket.of("spyfall");
         this.player = {cards: []};
         this.socket.on("state", state => {
-            CommonRoom.processCommonRoom(state, this.state);
+            CommonRoom.processCommonRoom(state, this.state, {
+                maxPlayers: "∞",
+                largeImageKey: "spyfall",
+                details: "Находка для шпиона"
+            });
             if (this.state.phase && state.phase !== 0 && !parseInt(localStorage.muteSounds)) {
                 if (this.state.phase !== 1 && state.phase === 1)
                     this.masterSound.play();
