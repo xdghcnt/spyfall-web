@@ -5,6 +5,7 @@
   "private": true,
   "files": [
     "module.js",
+    "locations.json",
     "public"
   ],
   "dependencies": {
