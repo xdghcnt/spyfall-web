@@ -14,10 +14,17 @@ function init(wsServer, path) {
     registry.handleAppPage(path, `${__dirname}/public/app.html`);
 
     const packs = JSON.parse(fs.readFileSync(`${__dirname}/locations.json`));
+    const builtLocationPack = (packName) => {
+        const result = [];
+        for (let [key, value] of Object.keys(packs[packName]).entries())
+            result.push({ name: value, index: key, packName: packName });
+        return result;
+    };
 
     class GameState extends wsServer.users.RoomState {
         constructor(hostId, hostData, userRegistry) {
             super(hostId, hostData, userRegistry);
+            debugger
             const
                 room = {
                     ...this.room,
@@ -52,8 +59,8 @@ function init(wsServer, path) {
                     correctLocation: null,
                     correctSpy: null,
                     pack: "spyfall1",
-                    locations: Object.keys(packs["spyfall1"]),
-                    packs: Object.keys(packs),
+                    locations: builtLocationPack('spyfall1'),
+                    packs: [...Object.keys(packs), 'shuffle'],
                     managedVoice: true
                 },
                 state = {
@@ -190,8 +197,22 @@ function init(wsServer, path) {
                     update();
                     updatePlayerState();
                 },
+                shuffleLocations = (amount) => {
+                    let result = [];
+                    for (let currentPackName of Object.keys(packs)) {
+
+                        result = [...result, ...shuffleArray(builtLocationPack(currentPackName))];
+                        shuffleArray(result);
+                    }
+                    result = result.slice(0, amount);
+                    room.locations = result;
+                    return result;
+                },
                 startRound = () => {
                     if (room.players.size >= PLAYERS_MIN) {
+
+
+
                         room.suspectedPlayer = null;
                         room.playerStartedVoting = null;
                         room.spyFound = null;
@@ -202,17 +223,17 @@ function init(wsServer, path) {
                         room.playersUsedVoteToken.clear();
                         room.playersVoted.clear();
                         state.spy = shuffleArray([...room.players])[0];
-                        const location = shuffleArray(Object.keys(packs[room.pack]))[0];
-                        state.location = Object.keys(packs[room.pack]).indexOf(location);
+                        const location = shuffleArray(room.locations)[0];
+                        state.location = room.locations.indexOf(location);
                         state.strokedLocations = {};
                         state.strokedPlayers = {};
                         state.roles = {};
-                        let roles = shuffleArray(packs[room.pack][location]),
+                        let roles = shuffleArray(packs[location.packName][location.name]),
                             rolesUsed = 0;
                         [...room.players].forEach((player) => {
                             state.roles[player] = roles[rolesUsed++];
                             if (rolesUsed === roles.length) {
-                                roles = shuffleArray(packs[room.pack][location]);
+                                roles = shuffleArray(packs[location.packName][location.name]);
                                 rolesUsed = 0;
                             }
                         });
@@ -472,14 +493,21 @@ function init(wsServer, path) {
                     }
                 },
                 "set-pack": (user, pack) => {
-                    if (user === room.hostId && packs[pack] && [0, 3].includes(room.phase)) {
+                    debugger
+                    if (user === room.hostId && (pack === 'shuffle' || packs[pack]) && [0, 3].includes(room.phase)) {
                         room.pack = pack;
-                        room.locations = Object.keys(packs[pack]);
+                        if (room.pack === 'shuffle') {
+                            shuffleLocations(30);
+                        } else {
+                            room.locations = builtLocationPack(pack)
+                        }
                         if (room.phase === 3)
                             startRound();
                     }
                     update();
                 }
+
+
             };
         }
 

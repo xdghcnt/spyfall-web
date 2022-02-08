@@ -16,8 +16,9 @@ class Location extends React.Component {
             data = this.props.data,
             index = this.props.index == null ? "spy" : this.props.index,
             game = this.props.game,
+            location = data.locations[index],
             table = this.props.table,
-            url = `/spyfall/${this.props.index == null ? "spy.jpg" : `/location/${data.pack}/${index}.jpg`}`;
+            url = `/spyfall/${this.props.index == null ? "spy.jpg" : `/location/${location.packName}/${location.index}.jpg`}`;
         return <div
             onClick={() => table && game.handleClickStrokeLocation(index)}
             style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${url})`}}
@@ -26,7 +27,7 @@ class Location extends React.Component {
                 correct: table && (index === data.correctLocation || index === data.blackSlotLocation),
                 wrong: table && index === data.wrongLocation
             })}>
-            <div className="location-title">{window.hyphenate(index !== "spy" ? data.locations[index] : "Шпион")}</div>
+            <div className="location-title">{window.hyphenate(index !== "spy" ? location.name : "Шпион")}</div>
             {(index !== "spy" && !table)
                 ? (<div className="role-title">{window.hyphenate(data.role)}</div>)
                 : ""}
@@ -640,17 +641,24 @@ class Game extends React.Component {
                                     </div>
                                 </div>
                                 <div className="locations-packs">
+
                                     {data.packs.map((it) => (
+                                        
                                         <div
                                             onClick={() => this.handleSetPack(it)}
                                             className={cs("location-pack-button", {
+                                                
                                                 "level-selected": data.pack === it,
                                                 "settings-button": [0, 3].includes(data.phase) && this.state.userId === this.state.hostId
+                                                
                                             })}>
                                             {it}
+                                   
                                         </div>
                                     ))}
                                 </div>
+                                 
+                                             
                             </div>) : ""}
                             <div className="side-buttons">
                                 {this.state.userId === this.state.hostId ?
