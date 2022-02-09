@@ -201,7 +201,7 @@ function init(wsServer, path) {
                     let result = [];
                     for (let currentPackName of Object.keys(packs)) {
 
-                        result = [...result, ...shuffleArray(builtLocationPack(currentPackName))];
+                        result = [...result, ...builtLocationPack(currentPackName)];
                         shuffleArray(result);
                     }
                     result = result.slice(0, amount);
@@ -210,9 +210,6 @@ function init(wsServer, path) {
                 },
                 startRound = () => {
                     if (room.players.size >= PLAYERS_MIN) {
-
-
-
                         room.suspectedPlayer = null;
                         room.playerStartedVoting = null;
                         room.spyFound = null;
