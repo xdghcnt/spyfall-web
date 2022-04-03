@@ -219,9 +219,8 @@ function init(wsServer, path) {
                         room.playersUsedVoteToken.clear();
                         room.playersVoted.clear();
                         state.spy = shuffleArray([...room.players])[0];
-                        const location = shuffleArray(room.locations)[0];
-                        state.location = room.locations.indexOf(location);
-                        shuffleArray(room.locations);
+                        state.location = getRandomInt(0, room.locations.length - 1);
+                        const location = room.locations[state.location];
                         state.strokedLocations = {};
                         state.strokedPlayers = {};
                         state.roles = {};
