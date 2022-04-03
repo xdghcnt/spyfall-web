@@ -24,7 +24,6 @@ function init(wsServer, path) {
     class GameState extends wsServer.users.RoomState {
         constructor(hostId, hostData, userRegistry) {
             super(hostId, hostData, userRegistry);
-            debugger
             const
                 room = {
                     ...this.room,
@@ -222,6 +221,7 @@ function init(wsServer, path) {
                         state.spy = shuffleArray([...room.players])[0];
                         const location = shuffleArray(room.locations)[0];
                         state.location = room.locations.indexOf(location);
+                        shuffleArray(room.locations);
                         state.strokedLocations = {};
                         state.strokedPlayers = {};
                         state.roles = {};
