@@ -17,13 +17,13 @@ function init(wsServer, path) {
     const builtLocationPack = (packName) => {
         const result = [];
         for (let [key, value] of Object.keys(packs[packName]).entries())
-            result.push({ name: value, index: key, packName: packName });
+            result.push({name: value, index: key, packName: packName});
         return result;
     };
 
     class GameState extends wsServer.users.RoomState {
-        constructor(hostId, hostData, userRegistry) {
-            super(hostId, hostData, userRegistry);
+        constructor(hostId, hostData, userRegistry, registry) {
+            super(hostId, hostData, userRegistry, registry.games.spyfall.id, path);
             const
                 room = {
                     ...this.room,
@@ -248,6 +248,11 @@ function init(wsServer, path) {
                         room.spyFound = room.suspectedPlayer === state.spy;
                         if (!room.spyFound)
                             room.wrongSpyRole = state.roles[room.suspectedPlayer];
+                        else if (((room.gameTime - room.gameTimeLeft) * 1000) <= 30) {
+                            registry.authUsers.processAchievement({
+                                room, user: room.playerStartedVoting
+                            }, registry.achievements.spyfallIntuition.id);
+                        }
                         endRound();
                     } else if (room.playersUsedVoteToken.size === room.players.size - (room.playersUsedVoteToken.has(state.spy) ? 0 : 1)) {
                         room.spyFound = false;
@@ -285,8 +290,14 @@ function init(wsServer, path) {
                         if (scores[0] >= room.goal)
                             room.playerWin = playerLeader;
                     }
-                    if (room.playerWin)
+                    if (room.playerWin) {
                         endGame();
+                        const userData = {room, user: room.playerWin}
+                        registry.authUsers.processAchievement(userData, registry.achievements.win100Spyfall.id);
+                        registry.authUsers.processAchievement(userData, registry.achievements.winGames.id, {
+                            game: registry.games.spyfall.id
+                        });
+                    }
                 },
                 leaveTeam = (user) => {
                     if (room.phase !== 0) {
@@ -443,11 +454,6 @@ function init(wsServer, path) {
                         room[type] = parseFloat(value);
                     update();
                 },
-                "change-name": (user, value) => {
-                    if (value)
-                        room.playerNames[user] = value.substr && value.substr(0, 60);
-                    update();
-                },
                 "remove-player": (user, playerId) => {
                     if (playerId && user === room.hostId)
                         removePlayer(playerId);
@@ -576,7 +582,7 @@ function init(wsServer, path) {
         }
     }
 
-    registry.createRoomManager(path, channel, GameState);
+    registry.createRoomManager(path, GameState);
 }
 
 module.exports = init;

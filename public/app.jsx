@@ -56,8 +56,8 @@ class Player extends React.Component {
                 onClick={(evt) => game.handleGiveBlackSlot(id, evt)}>
                 {!~data.blackSlotPlayers.indexOf(id) ? "visibility_off" : "visibility"}
             </i>,
-            hasAvatar = !!data.playerAvatars[id],
-            avatarURI = `/spyfall/avatars/${id}/${data.playerAvatars[id]}.png`,
+            avatarURI = window.commonRoom.getPlayerAvatarURL(id),
+            hasAvatar = !!avatarURI,
             isPlayer = data.players.includes(id),
             hasToken = !data.playersUsedVoteToken.includes(id) || data.playerStartedVoting === id;
         return (
@@ -84,7 +84,9 @@ class Player extends React.Component {
                 <div className="player-name-section">
                     {this.props.isSpectator ? <UserAudioMarker data={data} user={id}/> : ""}
                     <span
-                        className={cs("player-name", ...(isSpectator ? [] : UserAudioMarker.getAudioMarkerClasses(data, id)))}>{data.playerNames[id]}</span>
+                        className={cs("player-name", ...(isSpectator ? [] : UserAudioMarker.getAudioMarkerClasses(data, id)))}>
+                        <PlayerName data={data} id={id} />
+                    </span>
                     {isPlayer
                         ? (<span className="player-controls">
                             <span className="has-badge">
@@ -141,8 +143,8 @@ class Player extends React.Component {
 class Avatar extends React.Component {
     render() {
         const
-            hasAvatar = !!this.props.data.playerAvatars[this.props.player],
-            avatarURI = `/spyfall/avatars/${this.props.player}/${this.props.data.playerAvatars[this.props.player]}.png`;
+            avatarURI = window.commonRoom.getPlayerAvatarURL(this.props.player),
+            hasAvatar = !!avatarURI;
         return (
             <div className={cs("avatar", {"has-avatar": hasAvatar})}
                  style={{
@@ -166,37 +168,16 @@ class Avatar extends React.Component {
 class Game extends React.Component {
     componentDidMount() {
         this.gameName = "spyfall";
-        const initArgs = {};
+        const initArgs = CommonRoom.roomInit(this);
         if (!parseInt(localStorage.darkThemeSpyfall))
             document.body.classList.add("dark-theme");
-        if (!localStorage.spyfallUserId || !localStorage.spyfallUserToken) {
-            while (!localStorage.userName)
-                localStorage.userName = prompt("Your name");
-            localStorage.spyfallUserId = makeId();
-            localStorage.spyfallUserToken = makeId();
-        }
-        if (!location.hash)
-            history.replaceState(undefined, undefined, location.origin + location.pathname + "#" + makeId());
-        else
-            history.replaceState(undefined, undefined, location.origin + location.pathname + location.hash);
-        if (localStorage.acceptDelete) {
-            initArgs.acceptDelete = localStorage.acceptDelete;
-            delete localStorage.acceptDelete;
-        }
-        initArgs.avatarId = localStorage.avatarId;
-        initArgs.roomId = this.roomId = location.hash.substr(1);
-        initArgs.userId = this.userId = localStorage.spyfallUserId;
-        initArgs.token = this.userToken = localStorage.spyfallUserToken;
-        initArgs.userName = localStorage.userName;
-        initArgs.wssToken = window.wssToken;
-        this.socket = window.socket.of("spyfall");
         this.player = {cards: []};
         this.socket.on("state", state => {
             CommonRoom.processCommonRoom(state, this.state, {
                 maxPlayers: "∞",
                 largeImageKey: "spyfall",
                 details: "Находка для шпиона"
-            });
+            }, this);
             if (this.state.phase && state.phase !== 0 && !parseInt(localStorage.muteSounds)) {
                 if (this.state.phase !== 1 && state.phase === 1)
                     this.masterSound.play();
@@ -230,19 +211,6 @@ class Game extends React.Component {
         });
         this.socket.on("reload", () => {
             setTimeout(() => window.location.reload(), 3000);
-        });
-        this.socket.on("auth-required", () => {
-            this.setState(Object.assign({}, this.state, {
-                userId: this.userId,
-                authRequired: true
-            }));
-            if (grecaptcha)
-                grecaptcha.render("captcha-container", {
-                    sitekey: "",
-                    callback: (key) => this.socket.emit("auth", key)
-                });
-            else
-                setTimeout(() => window.location.reload(), 3000)
         });
         this.socket.on("prompt-delete-prev-room", (roomList) => {
             if (localStorage.acceptDelete =
@@ -321,12 +289,12 @@ class Game extends React.Component {
 
     handleRemovePlayer(id, evt) {
         evt.stopPropagation();
-        popup.confirm({content: `Removing ${this.state.playerNames[id]}?`}, (evt) => evt.proceed && this.socket.emit("remove-player", id));
+        popup.confirm({content: `Removing ${window.commonRoom.getPlayerName(id)}?`}, (evt) => evt.proceed && this.socket.emit("remove-player", id));
     }
 
     handleGiveHost(id, evt) {
         evt.stopPropagation();
-        popup.confirm({content: `Give host ${this.state.playerNames[id]}?`}, (evt) => evt.proceed && this.socket.emit("give-host", id));
+        popup.confirm({content: `Give host ${window.commonRoom.getPlayerName(id)}?`}, (evt) => evt.proceed && this.socket.emit("give-host", id));
     }
 
     handleChangeParam(value, type) {
@@ -334,7 +302,7 @@ class Game extends React.Component {
     }
 
     handleClickChangeName() {
-        popup.prompt({content: "New name", value: this.state.playerNames[this.state.userId] || ""}, (evt) => {
+        popup.prompt({content: "New name", value: window.commonRoom.getPlayerName(this.state.userId) || ""}, (evt) => {
             if (evt.proceed && evt.input_value.trim()) {
                 this.socket.emit("change-name", evt.input_value.trim());
                 localStorage.userName = evt.input_value.trim();
@@ -342,43 +310,10 @@ class Game extends React.Component {
         });
     }
 
-    handleClickSetAvatar() {
-        document.getElementById("avatar-input").click();
-    }
-
     handleClickClaimSpy(id, evt) {
         evt.stopPropagation();
         popup.confirm({content: "Обвинить в шпионаже?"}, (evt) => evt.proceed
             && this.socket.emit("start-voting", id));
-    }
-
-    handleSetAvatar(event) {
-        const input = event.target;
-        if (input.files && input.files[0])
-            this.sendAvatar(input.files[0]);
-    }
-
-    sendAvatar(file) {
-        const
-            uri = "/common/upload-avatar",
-            xhr = new XMLHttpRequest(),
-            fd = new FormData(),
-            fileSize = ((file.size / 1024) / 1024).toFixed(4); // MB
-        if (fileSize <= 5) {
-
-            xhr.open("POST", uri, true);
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    localStorage.avatarId = xhr.responseText;
-                    this.socket.emit("update-avatar", localStorage.avatarId);
-                } else if (xhr.readyState === 4 && xhr.status !== 200) popup.alert({content: "File upload error"});
-            };
-            fd.append("avatar", file);
-            fd.append("userId", this.userId);
-            fd.append("userToken", this.userToken);
-            xhr.send(fd);
-        } else
-            popup.alert({content: "File shouldn't be larger than 5 MB"});
     }
 
     handleToggleTheme() {
@@ -461,6 +396,10 @@ class Game extends React.Component {
         this.socket.emit("set-like", user);
     }
 
+    handleClickSetAvatar() {
+        window.commonRoom.handleClickSetImage('avatar');
+    }
+
     render() {
         clearTimeout(this.timerTimeout);
         if (this.state.disconnected)
@@ -493,7 +432,7 @@ class Game extends React.Component {
             if (data.phase === 1 && data.timed && data.time < 10000)
                 status = `Осталось ${parseInt(data.time / 1000)} секунд. Не забудьте выставить кого-нибудь на голосование!`;
             else if (data.playerWin)
-                status = `Победа ${data.playerNames[data.playerWin]}!`;
+                status = `Победа ${window.commonRoom?.getPlayerName(data.playerWin)}!`;
             else if (data.phase === 3)
                 if (data.locationFound === false)
                     status = `Шпион назвал неправильную локацию...`;
@@ -505,6 +444,7 @@ class Game extends React.Component {
                     status = `Пойман ${data.wrongSpyRole.toLowerCase()}. Шпиону удалось уйти...`;
             return (
                 <div className={cs("game", {timed: this.state.timed})}>
+                    <CommonRoom state={this.state} app={this}/>
                     <div className={
                         cs("game-board", {
                             active: this.state.inited,
@@ -572,7 +512,7 @@ class Game extends React.Component {
                                 && !data.playersVoted.includes(data.userId)
                                 && data.suspectedPlayer !== data.userId
                         })}>
-                            <div className="vote-title">Обвинить {data.playerNames[data.suspectedPlayer]}?</div>
+                            <div className="vote-title">Обвинить {window.commonRoom?.getPlayerName(data.suspectedPlayer)}?</div>
                             <div
                                 onClick={() => this.handleClickAddVote()}
                                 className="vote-button panel-accent">Да
@@ -643,22 +583,22 @@ class Game extends React.Component {
                                 <div className="locations-packs">
 
                                     {data.packs.map((it) => (
-                                        
+
                                         <div
                                             onClick={() => this.handleSetPack(it)}
                                             className={cs("location-pack-button", {
-                                                
+
                                                 "level-selected": data.pack === it,
                                                 "settings-button": [0, 3].includes(data.phase) && this.state.userId === this.state.hostId
-                                                
+
                                             })}>
                                             {it}
-                                   
+
                                         </div>
                                     ))}
                                 </div>
-                                 
-                                             
+
+
                             </div>) : ""}
                             <div className="side-buttons">
                                 {this.state.userId === this.state.hostId ?
@@ -701,9 +641,7 @@ class Game extends React.Component {
                                           className="toggle-theme material-icons settings-button">wb_sunny</i>)}
                             </div>
                             <i className="settings-hover-button material-icons">settings</i>
-                            <input id="avatar-input" type="file" onChange={evt => this.handleSetAvatar(evt)}/>
                         </div>
-                        <CommonRoom state={this.state} app={this}/>
                     </div>
                 </div>
             );
