@@ -17,9 +17,17 @@ function init(wsServer, path) {
     const builtLocationPack = (packName) => {
         const result = [];
         for (let [key, value] of Object.keys(packs[packName]).entries())
-            result.push({name: value, index: key, packName: packName});
+            result.push({ name: value, index: key, packName: packName });
         return result;
     };
+    const builtFullLocationPack = () => {
+        let result = [];
+        for (let pack of Object.keys(packs)) {
+            if (pack !== 'shuffle')
+                result.push(...builtLocationPack(pack));
+        }
+        return result;
+    }
 
     class GameState extends wsServer.users.RoomState {
         constructor(hostId, hostData, userRegistry, registry) {
@@ -58,9 +66,11 @@ function init(wsServer, path) {
                     correctLocation: null,
                     correctSpy: null,
                     pack: "spyfall1",
-                    locations: builtLocationPack('spyfall1'),
-                    packs: [...Object.keys(packs), 'shuffle'],
-                    managedVoice: true
+                    locations: builtLocationPack("spyfall1"),
+                    packs: [...Object.keys(packs), 'shuffle', 'свой'],
+                    managedVoice: true,
+                    newLocationPack: false,
+                    newLocationPackList: []
                 },
                 state = {
                     spy: null,
@@ -111,6 +121,16 @@ function init(wsServer, path) {
                         }
                     });
                 },
+                addNewLocationToNewLocationPack = (location) => {
+                    const index = room.newLocationPackList.findIndex(loc =>
+                        loc.name === location.name && loc.index === location.index && loc.packName === location.packName
+                    );
+                    if (index !== -1) {
+                        room.newLocationPackList.splice(index, 1);
+                    } else {
+                        room.newLocationPackList.push(location);
+                    }
+                },
                 startTimer = (initial) => {
                     if (room.timed) {
                         clearInterval(interval);
@@ -146,6 +166,7 @@ function init(wsServer, path) {
                         room.playerScores = {};
                         room.paused = false;
                         room.teamsLocked = true;
+                        room.locations = room.newLocationPackList
                         clearInterval(interval);
                         startRound();
                     } else {
@@ -158,6 +179,8 @@ function init(wsServer, path) {
                     room.teamsLocked = false;
                     room.time = null;
                     room.phase = 0;
+                    if (room.pack === 'свой')
+                        room.locations = builtFullLocationPack()
                     clearInterval(interval);
                     update();
                     updatePlayerState();
@@ -199,12 +222,11 @@ function init(wsServer, path) {
                 shuffleLocations = (amount) => {
                     let result = [];
                     for (let currentPackName of Object.keys(packs)) {
-
                         result = [...result, ...builtLocationPack(currentPackName)];
                         shuffleArray(result);
                     }
                     result = result.slice(0, amount);
-                    room.locations = result;
+                    room.newLocationPackList = result;
                     return result;
                 },
                 startRound = () => {
@@ -292,7 +314,7 @@ function init(wsServer, path) {
                     }
                     if (room.playerWin) {
                         endGame();
-                        const userData = {room, user: room.playerWin}
+                        const userData = { room, user: room.playerWin }
                         registry.authUsers.processAchievement(userData, registry.achievements.win100Spyfall.id);
                         registry.authUsers.processAchievement(userData, registry.achievements.winGames.id, {
                             game: registry.games.spyfall.id
@@ -396,6 +418,25 @@ function init(wsServer, path) {
                     }
                     update();
                 },
+                "location-pack-make": (user, location) => {
+                    if (room.players.has(user) && room.phase === 0) {
+                        addNewLocationToNewLocationPack(location);
+                    }
+                    update();
+                },
+                "set-random-locations": (user, amount) => {
+                    if (room.players.has(user) && room.phase === 0
+                        && amount > 0 && amount <= 100 && room.pack === 'свой' && room.hostId === user) {
+                        shuffleLocations(amount);
+                        update();
+                    }
+                },
+                "clear-random-locations": (user) => {
+                    if (room.players.has(user) && room.phase === 0 && room.pack === 'свой' && room.hostId === user) {
+                        room.newLocationPackList = [];
+                        update();
+                    }
+                },
                 "stroke-location": (user, location) => {
                     if (room.players.has(user) && [1, 2].includes(room.phase)) {
                         state.strokedLocations[user] = state.strokedLocations[user] || {};
@@ -430,6 +471,10 @@ function init(wsServer, path) {
                 "stop": (user) => {
                     if (user === room.hostId)
                         endRound(false, true);
+                },
+                "stop-game": (user) => {
+                    if (user === room.hostId)
+                        endGame()
                 },
                 "restart": (user) => {
                     if (user === room.hostId)
@@ -495,21 +540,24 @@ function init(wsServer, path) {
                     }
                 },
                 "set-pack": (user, pack) => {
-                    debugger
-                    if (user === room.hostId && (pack === 'shuffle' || packs[pack]) && [0, 3].includes(room.phase)) {
+                    if (user === room.hostId && ((pack === 'shuffle' || pack === 'свой') || packs[pack])
+                        && [0, 3].includes(room.phase)) {
                         room.pack = pack;
-                        if (room.pack === 'shuffle') {
-                            shuffleLocations(30);
+                        if (room.pack === 'свой') {
+                            room.locations = builtFullLocationPack()
                         } else {
-                            room.locations = builtLocationPack(pack)
+                            room.newLocationPackList = [];
+                            if (room.pack === 'shuffle') {
+                                shuffleLocations(30);
+                            } else {
+                                room.locations = builtLocationPack(pack)
+                            }
+                            if (room.phase === 3)
+                                startRound();
                         }
-                        if (room.phase === 3)
-                            startRound();
                     }
                     update();
                 }
-
-
             };
         }
 
