@@ -10,6 +10,7 @@ function makeId() {
     return text;
 }
 
+
 class Location extends React.Component {
     render() {
         const
@@ -20,12 +21,17 @@ class Location extends React.Component {
             table = this.props.table,
             url = `/spyfall/${this.props.index == null ? "spy.jpg" : `/location/${location.packName}/${location.index}.jpg`}`;
         return <div
-            onClick={() => table && game.handleClickStrokeLocation(index)}
+            onClick={() => (table && data.phase == 1 && game.handleClickStrokeLocation(index)) ||
+                 table && data.phase == 0 && game.handleClickLocationPackMake(location)}
             style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${url})`}}
             className={cs(`location location-${index}`, {
                 stroked: table && data.strokedLocations && data.strokedLocations[index],
                 correct: table && (index === data.correctLocation || index === data.blackSlotLocation),
-                wrong: table && index === data.wrongLocation
+                wrong: table && index === data.wrongLocation,
+                choosed: table && data.pack == 'свой' && data.phase === 0 && Object.values(data.newLocationPackList).some(loc => 
+                    loc.name === location.name && loc.index === location.index && loc.packName === location.packName
+                  ),
+                locationChoosing: table && data.phase === 0 && data.pack == 'свой'
             })}>
             <div className="location-title">{window.hyphenate(index !== "spy" ? location.name : "Шпион")}</div>
             {(index !== "spy" && !table)
@@ -278,6 +284,18 @@ class Game extends React.Component {
         this.socket.emit("stroke-location", location);
     }
 
+    handleClickLocationPackMake(location) {
+        this.socket.emit("location-pack-make", location);
+    }
+
+    handleSetRandomLocations(amount) {
+        this.socket.emit("set-random-locations", amount);
+    }
+
+    handleClearRandomLocations() {
+        this.socket.emit("clear-random-locations");
+    }
+
     handleClickStrokePlayer(player) {
         this.socket.emit("stroke-player", player);
     }
@@ -337,6 +355,10 @@ class Game extends React.Component {
 
     handleClickStop() {
         popup.confirm({content: "Остановить игру?"}, (evt) => evt.proceed && this.socket.emit("stop"));
+    }
+
+    handleClickStopGame() {
+        popup.confirm({content: "Закончить игру?"}, (evt) => evt.proceed && this.socket.emit("stop-game"));
     }
 
     handleClickRestart() {
@@ -456,6 +478,31 @@ class Game extends React.Component {
                         <div className="main-row">
                             <div className="main-dock">
                                 <div className="player-list">
+                                    {data.phase === 0 && data.pack === 'свой' ? (<div className="location-pack-counter">
+                                        <div> 
+                                            кол-во локаций:
+                                        </div>
+                                        <div className="location-counter">
+                                            {data.newLocationPackList.length}
+                                        </div>
+                                        <div className="setRandomButtons">
+                                        <div className="setRanndomPackButton" onClick={() => this.handleClearRandomLocations()}>
+                                            clear
+                                        </div>
+                                        <div className="setRanndomPackButton" onClick={() => this.handleSetRandomLocations(20)}>
+                                            20
+                                        </div>
+                                        <div className="setRanndomPackButton" onClick={() => this.handleSetRandomLocations(30)}>
+                                            30
+                                        </div>
+                                        <div className="setRanndomPackButton" onClick={() => this.handleSetRandomLocations(40)}>
+                                            40
+                                        </div>
+                                        <div className="setRanndomPackButton" onClick={() => this.handleSetRandomLocations(50)}>
+                                            50
+                                        </div>
+                                        </div>
+                                    </div>) : ""}
                                     {data.timed ? (<div className="timer">
                                             <div className="round-track-bar">
                                                 <div className="rtb-clip1">
@@ -622,6 +669,9 @@ class Game extends React.Component {
                                 {(isHost && data.paused && data.phase !== 3 && data.phase !== 0)
                                     ? (<i onClick={() => this.handleClickStop()}
                                           className="toggle-theme material-icons settings-button">stop</i>) : ""}
+                                {(isHost && data.paused && data.phase !== 3 && data.phase !== 0)
+                                    ? (<i onClick={() => this.handleClickStopGame()}
+                                          className="toggle-theme material-icons settings-button">stop_circle</i>) : ""}
                                 {(isHost && data.paused && data.phase === 3)
                                     ? (<i onClick={() => this.handleClickRestart()}
                                           className="toggle-theme material-icons settings-button">sync</i>) : ""}
