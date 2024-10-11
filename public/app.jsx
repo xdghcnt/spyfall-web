@@ -22,7 +22,7 @@ class Location extends React.Component {
             url = `/spyfall/${this.props.index == null ? "spy.jpg" : `/location/${location.packName}/${location.index}.jpg`}`;
         return <div
             onClick={() => (table && data.phase == 1 && game.handleClickStrokeLocation(index)) ||
-                 table && data.phase == 0 && game.handleClickLocationPackMake(location)}
+                 table && (data.phase == 0 || data.phase == 4)&& game.handleClickLocationPackMake(location)}
             style={{"background-image": `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${url})`}}
             className={cs(`location location-${index}`, {
                 stroked: table && data.strokedLocations && data.strokedLocations[index],
