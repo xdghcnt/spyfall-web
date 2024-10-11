@@ -67,7 +67,7 @@ function init(wsServer, path) {
                     correctSpy: null,
                     pack: "spyfall1",
                     locations: builtLocationPack("spyfall1"),
-                    packs: [...Object.keys(packs), 'shuffle', 'свой'],
+                    packs: [...Object.keys(packs), 'свой'],
                     managedVoice: true,
                     newLocationPack: false,
                     newLocationPackList: []
@@ -166,7 +166,8 @@ function init(wsServer, path) {
                         room.playerScores = {};
                         room.paused = false;
                         room.teamsLocked = true;
-                        room.locations = room.newLocationPackList
+                        if (room.pack === 'свой')
+                            room.locations = room.newLocationPackList
                         clearInterval(interval);
                         startRound();
                     } else {
